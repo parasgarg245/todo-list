@@ -2,6 +2,7 @@ const express=require("express");
 const bodyParaser=require("body-parser");
 const date=require(__dirname+"/date.js");
 const mongoose=require("mongoose");
+const _=require('lodash');
 
 
 const app=express();
@@ -50,13 +51,13 @@ app.get("/",function(req,res){
     let Day=date.getday();
 
     Item.find({},function(err,founditem){
-        if(defaaultitems.length===0)
+        if(defaaultitems.length===0) 
             Item.insertMany(defaaultitems, function (err) {
                 if (err)
                     console.log(err)
-                else
+                else{
                     console.log("Successfully added the default items to db")
-                res.redirect("/");
+                    res.redirect("/");}
             })
         else    
             res.render("list", { listTitle: Day, newListItem: founditem })
@@ -92,17 +93,30 @@ app.post("/", function (req, res) {
 })
 app.post("/delete",function(req,res){
     const checkitemid=req.body.checkbox;
+    const listName=req.body.listName;
+    let day = date.getday();
+    if(listName===day){
     Item.findByIdAndRemove(checkitemid,function(err){
         if(err)
             console.log(err)
-        else
+            
+        else{
             console.log("Succesfully deleted checked item")
+             res.redirect("/");}
     })
-    res.redirect("/");
+} else{
+    List.findOneAndUpdate({name: listName}, {$pull : {items : {id: checkitemid}}}, function(err,foundList){
+        if(!err){
+            res.redirect("/"+listName);
+        }
+
+    })
+}
+    
 })
 
 app.get("/:customListNAme",function(req,res){
-    const customListNAme=req.params.customListNAme;
+    const customListNAme = _.capitalize(req.params.customListNAme) ;
 
     List.findOne({name:customListNAme},function(err,foundlist ){
         if(!err){
